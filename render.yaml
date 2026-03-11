@@ -3,7 +3,7 @@ services:
     name: stage-server
     env: node
     plan: free
-    region: manila             # or your nearest region
+    region: singapore             # or your nearest region
     branch: main
     buildCommand: npm install
     startCommand: npm start
