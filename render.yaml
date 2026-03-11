@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: stage-server
+    env: node
+    plan: free
+    region: manila             # or your nearest region
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
