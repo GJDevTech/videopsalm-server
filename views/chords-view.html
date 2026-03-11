@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Chords View</title>
+<style>
+  body { background: black; color: white; font-family: monospace; }
+  #title { font-size: 36px; text-align: center; margin-bottom: 20px; }
+  #current { font-size: 48px; text-align: center; margin: 20px; }
+  #next { font-size: 28px; text-align: center; margin: 20px; color: gray; }
+
+  .chords-line {
+    color: rgb(255, 255, 0);
+  }
+
+  pre { 
+    margin: 0;
+    white-space: pre;
+  } 
+</style>
+</head>
+<body>
+
+<div id="title"></div>
+<div id="current"></div>
+<div id="next"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+socket.on("slide-update", (data) => {
+  console.log(data);
+    const index = parseInt(data.CurrentItemIndex) - 1;
+    const current = data.SongVerses[index];
+    const next = data.SongVerses[index + 1];
+
+    document.getElementById("title").innerText = data.Title;
+    document.getElementById("current").innerHTML = current ? renderChordsAbove(current.Lyrics) : "";
+    document.getElementById("next").innerHTML = next ? renderChordsAbove(next.Lyrics) : "";
+});
+
+function renderChordsAbove(text) {
+    if (!text) return "";
+
+    const lines = text.split('\n');
+    let result = "";
+
+    lines.forEach(line => {
+        let chordLine = "";
+        let lyricLine = "";
+
+        let regex = /\[(.*?)\]/g;
+        let lastIndex = 0;
+
+        let matches = [...line.matchAll(regex)];
+
+        let lyricPointer = 0; // Tracks position in lyricLine
+
+        matches.forEach(match => {
+            let chord = match[1];
+            let start = match.index;
+
+            // Append lyrics before the chord
+            let segment = line.slice(lastIndex, start);
+            lyricLine += segment;
+            lastIndex = start + match[0].length;
+
+            // Build chord line: pad with spaces to reach the position in lyricLine
+            let pad = lyricLine.length - chordLine.length;
+            chordLine += " ".repeat(pad) + chord;
+        });
+
+        // Append remaining lyrics after last chord
+        lyricLine += line.slice(lastIndex);
+
+        result += `<pre class="chords-line">${chordLine}</pre>\n<pre>${lyricLine}</pre>\n`;
+    });
+
+    return result;
+}
+</script>
+
+</body>
+</html>
