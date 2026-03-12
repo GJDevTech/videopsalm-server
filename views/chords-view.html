@@ -5,8 +5,10 @@
 <style>
   body { background: black; color: white; font-family: monospace; }
   #title { font-size: 36px; text-align: center; margin-bottom: 20px; }
+  #type { font-size: 32px; text-align: center; margin-bottom: 20px; }
   #current { font-size: 48px; text-align: center; margin: 20px; }
-  #next { font-size: 28px; text-align: center; margin: 20px; color: gray; }
+  #next { font-size: 32px; text-align: center; margin: 20px; color: rgb(173, 173, 173); }
+  #next-2 { font-size: 24px; text-align: center; margin: 20px; color: rgb(91, 91, 91); }
 
   .chords-line {
     color: rgb(255, 255, 0);
@@ -21,8 +23,10 @@
 <body>
 
 <div id="title"></div>
+<div id="type"></div>
 <div id="current"></div>
 <div id="next"></div>
+<div id="next-2"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -33,10 +37,13 @@ socket.on("slide-update", (data) => {
     const index = parseInt(data.CurrentItemIndex) - 1;
     const current = data.SongVerses[index];
     const next = data.SongVerses[index + 1];
+    const next2 = data.SongVerses[index + 2];
 
     document.getElementById("title").innerText = data.Title;
+    document.getElementById("title").innerText = current ? current.Type : "";
     document.getElementById("current").innerHTML = current ? renderChordsAbove(current.Lyrics) : "";
     document.getElementById("next").innerHTML = next ? renderChordsAbove(next.Lyrics) : "";
+    document.getElementById("next-2").innerHTML = next2 ? renderChordsAbove(next2.Lyrics) : "";
 });
 
 function renderChordsAbove(text) {

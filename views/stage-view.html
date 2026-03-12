@@ -5,15 +5,19 @@
 <style>
   body { background: black; color: white; font-family: sans-serif; }
   #title { font-size: 36px; text-align: center; margin-bottom: 20px; }
+  #type { font-size: 32px; text-align: center; margin-bottom: 20px;}
   #current { font-size: 48px; text-align: center; margin: 20px; }
-  #next { font-size: 28px; text-align: center; margin: 20px; color: gray; }
+  #next { font-size: 32px; text-align: center; margin: 20px; color: gray; }
+  #next-2 { font-size: 24px; text-align: center; margin: 20px; color: gray; }
 </style>
 </head>
 <body>
 
 <div id="title"></div>
+<div id="type"></div>
 <div id="current"></div>
 <div id="next"></div>
+<div id="next-2"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -27,10 +31,13 @@ socket.on("slide-update", (data) => {
     const index = parseInt(data.CurrentItemIndex) - 1;
     const current = data.SongVerses[index];
     const next = data.SongVerses[index + 1];
+    const next2 = data.SongVerses[index + 2];
 
     document.getElementById("title").innerText = data.Title;
+    document.getElementById("type").innerText = current ? current.Type : "";
     document.getElementById("current").innerText = current ? removeChords(current.Lyrics) : "";
     document.getElementById("next").innerText = next ? removeChords(next.Lyrics) : "";
+    document.getElementById("next-2").innerText = next2 ? removeChords(next2.Lyrics) : "";
 });
 </script>
 
