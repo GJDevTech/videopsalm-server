@@ -34,7 +34,7 @@ socket.on("slide-update", (data) => {
     const next2 = data.SongVerses[index + 2];
 
     document.getElementById("title").innerText = data.Title;
-    document.getElementById("type").innerText = current ? current.Type : "";
+    document.getElementById("type").innerText = current ? current.Title : "";
     document.getElementById("current").innerText = current ? removeChords(current.Lyrics) : "";
     document.getElementById("next").innerText = next ? removeChords(next.Lyrics) : "";
     document.getElementById("next-2").innerText = next2 ? removeChords(next2.Lyrics) : "";
