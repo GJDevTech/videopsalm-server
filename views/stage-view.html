@@ -27,7 +27,26 @@ function removeChords(text) {
     return text.replace(/\[[^\]]+\]/g, "");
 }
 
+function showTimer(timerValue) {
+    // Clear everything
+    document.getElementById("title").innerText = "";
+    document.getElementById("type").innerText = "";
+    document.getElementById("next").innerText = "";
+    document.getElementById("next-2").innerText = "";
+
+    const currentEl = document.getElementById("current");
+
+    currentEl.innerText = timerValue;
+    currentEl.style.color = "red";
+    currentEl.style.fontSize = "500px"; // big
+    currentEl.style.fontWeight = "bolder";
+}
+
 socket.on("slide-update", (data) => {
+    if (data.Timer){
+        showTimer(data.Timer);
+        return;
+    }
     const index = parseInt(data.CurrentItemIndex) - 1;
     const current = data.SongVerses[index];
     const next = data.SongVerses[index + 1];

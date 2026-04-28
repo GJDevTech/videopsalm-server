@@ -17,8 +17,15 @@ let slideState = { SongVerses: [], CurrentItemIndex: 1, Title: "" };
 
 // endpoint VideoPsalm posts to
 app.post("/update-slide", (req, res) => {
-    console.log(req.body);
-    slideState = req.body;
+
+    if(req.body.Timer){
+        slideState = {Timer: req.body.Timer};
+    }
+    else{
+        console.log(req.body);
+        slideState = req.body;
+    }
+    
     io.emit("slide-update", slideState); // broadcast to all clients
     res.json({ success: true });
 });
