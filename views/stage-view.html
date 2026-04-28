@@ -39,7 +39,6 @@ function showTimer(timerValue) {
     currentEl.innerText = timerValue;
     currentEl.style.color = "red";
     currentEl.style.fontSize = "175px"; // big
-    currentEl.style.fontWeight = "bolder";
 }
 
 function clearDisplay(){
@@ -51,7 +50,7 @@ function clearDisplay(){
 }
 
 socket.on("slide-update", (data) => {
-    
+
     if(data.Clear){
         clearDisplay();
         return;
@@ -66,6 +65,9 @@ socket.on("slide-update", (data) => {
     const current = data.SongVerses[index];
     const next = data.SongVerses[index + 1];
     const next2 = data.SongVerses[index + 2];
+
+    document.getElementById("current").style.color = "rgb(255, 255, 0)";
+    document.getElementById("current").style.fontSize = "56px";
 
     document.getElementById("title").innerText = data.Title;
     document.getElementById("type").innerText = current ? current.Title : "";
