@@ -38,15 +38,30 @@ function showTimer(timerValue) {
 
     currentEl.innerText = timerValue;
     currentEl.style.color = "red";
-    currentEl.style.fontSize = "500px"; // big
+    currentEl.style.fontSize = "175px"; // big
     currentEl.style.fontWeight = "bolder";
 }
 
+function clearDisplay(){
+    document.getElementById("title").innerText = "";
+    document.getElementById("type").innerText = "";
+    document.getElementById("current").innerText = "";
+    document.getElementById("next").innerText = "";
+    document.getElementById("next-2").innerText = "";
+}
+
 socket.on("slide-update", (data) => {
+    
+    if(data.Clear){
+        clearDisplay();
+        return;
+    }
+
     if (data.Timer){
         showTimer(data.Timer);
         return;
     }
+
     const index = parseInt(data.CurrentItemIndex) - 1;
     const current = data.SongVerses[index];
     const next = data.SongVerses[index + 1];
