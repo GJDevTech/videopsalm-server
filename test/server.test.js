@@ -86,7 +86,12 @@ test("church presentation states are isolated and keep their church ID", async (
           version: 2,
           mode: "LIVE",
           text: "Second church",
-          settings: { textColor: "#00ff00", textBoxX: 12 },
+          nextText: "Next slide lyrics",
+          settings: {
+            textColor: "#00ff00",
+            textBoxX: 12,
+            showNextSlide: true,
+          },
         },
       }),
     });
@@ -96,6 +101,8 @@ test("church presentation states are isolated and keep their church ID", async (
     assert.equal(instance.churchStates.get("church-one").text, "First church");
     assert.equal(instance.churchStates.get("church-two").text, "Second church");
     assert.equal(instance.churchStates.get("church-two").settings.textColor, "#00ff00");
+    assert.equal(instance.churchStates.get("church-two").settings.showNextSlide, true);
+    assert.equal(instance.churchStates.get("church-two").nextText, "Next slide lyrics");
     assert.equal(instance.churchStates.get("church-one").instanceId, "church-one");
 
     const updated = await send("church-one", "Updated");
@@ -109,5 +116,7 @@ test("church presentation states are isolated and keep their church ID", async (
     assert.match(viewer, /white-space: pre/);
     assert.match(viewer, /outlineEnabled/);
     assert.match(viewer, /logoData/);
+    assert.match(viewer, /showNextSlide/);
+    assert.match(viewer, /next-lyrics/);
   });
 });

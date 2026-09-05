@@ -30,6 +30,24 @@
       white-space: pre;
       line-height: 1.12;
     }
+    #next-box {
+      position: absolute;
+      left: 5%;
+      bottom: 3%;
+      width: 90%;
+      height: 16%;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #next-lyrics {
+      width: 100%;
+      white-space: pre;
+      line-height: 1.12;
+      text-align: center;
+      color: #A7B0BC;
+    }
     #logo {
       position: absolute;
       display: none;
@@ -54,6 +72,7 @@
 <body>
   <main id="stage" aria-live="polite">
     <div id="text-box"><div id="lyrics"></div></div>
+    <div id="next-box"><div id="next-lyrics"></div></div>
     <img id="logo" alt="Church logo">
   </main>
   <div id="status" role="status"></div>
@@ -73,6 +92,8 @@
     const stage = document.getElementById("stage");
     const box = document.getElementById("text-box");
     const lyrics = document.getElementById("lyrics");
+    const nextBox = document.getElementById("next-box");
+    const nextLyrics = document.getElementById("next-lyrics");
     const logo = document.getElementById("logo");
     const status = document.getElementById("status");
     let cue = null;
@@ -101,6 +122,26 @@
         }
       }
       lyrics.style.fontSize = `${best}px`;
+    }
+
+    function fitNextText(maxSize) {
+      let low = 1;
+      let high = Math.max(1, Math.round(maxSize));
+      let best = 1;
+      while (low <= high) {
+        const size = Math.floor((low + high) / 2);
+        nextLyrics.style.fontSize = `${size}px`;
+        if (
+          nextLyrics.scrollWidth <= nextBox.clientWidth &&
+          nextLyrics.scrollHeight <= nextBox.clientHeight
+        ) {
+          best = size;
+          low = size + 1;
+        } else {
+          high = size - 1;
+        }
+      }
+      nextLyrics.style.fontSize = `${best}px`;
     }
 
     function render() {
@@ -148,6 +189,17 @@
           `${value(settings, "shadowColor", "#000000")}`
         : "none";
       fitText(Number(value(settings, "fontSize", 54)) * scale);
+
+      const showNext = Boolean(value(settings, "showNextSlide", false)) &&
+        !blackout && !clear && !cue.textHidden && String(cue.nextText || "");
+      nextBox.style.display = showNext ? "flex" : "none";
+      nextLyrics.textContent = showNext ? String(cue.nextText || "") : "";
+      if (showNext) {
+        nextLyrics.style.fontFamily = value(settings, "fontFamily", "Arial");
+        nextLyrics.style.fontWeight = value(settings, "bold", true) ? "700" : "400";
+        nextLyrics.style.fontStyle = value(settings, "italic", false) ? "italic" : "normal";
+        fitNextText(Math.max(18, Number(value(settings, "fontSize", 54)) * 0.52) * scale);
+      }
 
       const logoData = String(value(settings, "logoData", ""));
       const showLogo = !blackout && cue.logoVisible && logoData;
