@@ -40,9 +40,11 @@ Content-Type: application/json
 {"cue": {"version": 2, "mode": "LIVE", "text": "...", "settings": {}}}
 ```
 
-The desktop sends each church's dedicated Stage View style in `settings`. When
-`settings.showNextSlide` is true, `cue.nextText` is rendered along the bottom of
-the page. Live View styling and the in-app Preview remain local to the desktop.
+The desktop sends each church's dedicated Stage View style in `settings`.
+`settings.nextSlideCount` selects zero to five entries from
+`cue.upcomingSlides`; later entries are displayed progressively smaller and
+fainter. Stage View never displays the Live View church logo. Live View styling
+and the in-app Preview remain local to the desktop.
 
 The previous `/api/cue` and VideoPsalm `/update-slide` endpoints remain for
 compatibility, but both now require a valid `churchId` and the configured token.

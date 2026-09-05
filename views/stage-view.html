@@ -30,29 +30,25 @@
       white-space: pre;
       line-height: 1.12;
     }
-    #next-box {
+    #upcoming {
       position: absolute;
       left: 5%;
-      bottom: 3%;
+      bottom: 2%;
       width: 90%;
-      height: 16%;
+      height: 27%;
       display: none;
+      flex-direction: column;
       align-items: flex-end;
       justify-content: center;
+      gap: 0.35vh;
       overflow: hidden;
     }
-    #next-lyrics {
+    .upcoming-slide {
       width: 100%;
       white-space: pre;
       line-height: 1.12;
       text-align: center;
       color: #A7B0BC;
-    }
-    #logo {
-      position: absolute;
-      display: none;
-      height: auto;
-      object-fit: contain;
     }
     #status {
       position: fixed;
@@ -72,8 +68,7 @@
 <body>
   <main id="stage" aria-live="polite">
     <div id="text-box"><div id="lyrics"></div></div>
-    <div id="next-box"><div id="next-lyrics"></div></div>
-    <img id="logo" alt="Church logo">
+    <div id="upcoming"></div>
   </main>
   <div id="status" role="status"></div>
 
@@ -92,9 +87,7 @@
     const stage = document.getElementById("stage");
     const box = document.getElementById("text-box");
     const lyrics = document.getElementById("lyrics");
-    const nextBox = document.getElementById("next-box");
-    const nextLyrics = document.getElementById("next-lyrics");
-    const logo = document.getElementById("logo");
+    const upcomingBox = document.getElementById("upcoming");
     const status = document.getElementById("status");
     let cue = null;
 
@@ -107,41 +100,21 @@
       status.style.display = message ? "block" : "none";
     }
 
-    function fitText(maxSize) {
+    function fitElementText(element, container, maxSize) {
       let low = 1;
       let high = Math.max(1, Math.round(maxSize));
       let best = 1;
       while (low <= high) {
         const size = Math.floor((low + high) / 2);
-        lyrics.style.fontSize = `${size}px`;
-        if (lyrics.scrollWidth <= box.clientWidth && lyrics.scrollHeight <= box.clientHeight) {
+        element.style.fontSize = `${size}px`;
+        if (element.scrollWidth <= container.clientWidth && element.scrollHeight <= container.clientHeight) {
           best = size;
           low = size + 1;
         } else {
           high = size - 1;
         }
       }
-      lyrics.style.fontSize = `${best}px`;
-    }
-
-    function fitNextText(maxSize) {
-      let low = 1;
-      let high = Math.max(1, Math.round(maxSize));
-      let best = 1;
-      while (low <= high) {
-        const size = Math.floor((low + high) / 2);
-        nextLyrics.style.fontSize = `${size}px`;
-        if (
-          nextLyrics.scrollWidth <= nextBox.clientWidth &&
-          nextLyrics.scrollHeight <= nextBox.clientHeight
-        ) {
-          best = size;
-          low = size + 1;
-        } else {
-          high = size - 1;
-        }
-      }
-      nextLyrics.style.fontSize = `${best}px`;
+      element.style.fontSize = `${best}px`;
     }
 
     function render() {
@@ -188,27 +161,34 @@
           `${Number(value(settings, "shadowOffsetY", 3)) * scale}px ` +
           `${value(settings, "shadowColor", "#000000")}`
         : "none";
-      fitText(Number(value(settings, "fontSize", 54)) * scale);
+      fitElementText(lyrics, box, Number(value(settings, "fontSize", 54)) * scale);
 
-      const showNext = Boolean(value(settings, "showNextSlide", false)) &&
-        !blackout && !clear && !cue.textHidden && String(cue.nextText || "");
-      nextBox.style.display = showNext ? "flex" : "none";
-      nextLyrics.textContent = showNext ? String(cue.nextText || "") : "";
-      if (showNext) {
-        nextLyrics.style.fontFamily = value(settings, "fontFamily", "Arial");
-        nextLyrics.style.fontWeight = value(settings, "bold", true) ? "700" : "400";
-        nextLyrics.style.fontStyle = value(settings, "italic", false) ? "italic" : "normal";
-        fitNextText(Math.max(18, Number(value(settings, "fontSize", 54)) * 0.52) * scale);
-      }
-
-      const logoData = String(value(settings, "logoData", ""));
-      const showLogo = !blackout && cue.logoVisible && logoData;
-      logo.style.display = showLogo ? "block" : "none";
-      if (showLogo) {
-        if (logo.src !== logoData) logo.src = logoData;
-        logo.style.left = `${value(settings, "logoX", 5)}%`;
-        logo.style.top = `${value(settings, "logoY", 5)}%`;
-        logo.style.width = `${value(settings, "logoWidth", 20)}%`;
+      let count = Number(value(settings, "nextSlideCount", value(settings, "showNextSlide", false) ? 1 : 0));
+      count = Math.max(0, Math.min(5, Number.isFinite(count) ? Math.floor(count) : 0));
+      const supplied = Array.isArray(cue.upcomingSlides)
+        ? cue.upcomingSlides
+        : (cue.nextText ? [{ text: cue.nextText, segment: cue.nextSegment || "" }] : []);
+      const upcoming = supplied.slice(0, count);
+      const showUpcoming = !blackout && !clear && !cue.textHidden && upcoming.length > 0;
+      upcomingBox.replaceChildren();
+      upcomingBox.style.display = showUpcoming ? "flex" : "none";
+      if (showUpcoming) {
+        upcoming.forEach((slide, index) => {
+          const element = document.createElement("div");
+          element.className = "upcoming-slide";
+          element.textContent = String(slide?.text || "");
+          element.style.fontFamily = value(settings, "fontFamily", "Arial");
+          element.style.fontWeight = value(settings, "bold", true) ? "700" : "400";
+          element.style.fontStyle = value(settings, "italic", false) ? "italic" : "normal";
+          element.style.opacity = String(Math.max(0.38, 0.86 - index * 0.12));
+          upcomingBox.appendChild(element);
+          const relativeSize = 0.50 * Math.pow(0.82, index);
+          fitElementText(
+            element,
+            upcomingBox,
+            Math.max(13, Number(value(settings, "fontSize", 54)) * relativeSize) * scale,
+          );
+        });
       }
     }
 

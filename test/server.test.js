@@ -87,10 +87,14 @@ test("church presentation states are isolated and keep their church ID", async (
           mode: "LIVE",
           text: "Second church",
           nextText: "Next slide lyrics",
+          upcomingSlides: [
+            { text: "Next slide lyrics", segment: "Chorus" },
+            { text: "Later lyrics", segment: "Bridge" },
+          ],
           settings: {
             textColor: "#00ff00",
             textBoxX: 12,
-            showNextSlide: true,
+            nextSlideCount: 2,
           },
         },
       }),
@@ -101,8 +105,9 @@ test("church presentation states are isolated and keep their church ID", async (
     assert.equal(instance.churchStates.get("church-one").text, "First church");
     assert.equal(instance.churchStates.get("church-two").text, "Second church");
     assert.equal(instance.churchStates.get("church-two").settings.textColor, "#00ff00");
-    assert.equal(instance.churchStates.get("church-two").settings.showNextSlide, true);
+    assert.equal(instance.churchStates.get("church-two").settings.nextSlideCount, 2);
     assert.equal(instance.churchStates.get("church-two").nextText, "Next slide lyrics");
+    assert.equal(instance.churchStates.get("church-two").upcomingSlides.length, 2);
     assert.equal(instance.churchStates.get("church-one").instanceId, "church-one");
 
     const updated = await send("church-one", "Updated");
@@ -115,8 +120,9 @@ test("church presentation states are isolated and keep their church ID", async (
     assert.match(viewer, /cue-update/);
     assert.match(viewer, /white-space: pre/);
     assert.match(viewer, /outlineEnabled/);
-    assert.match(viewer, /logoData/);
-    assert.match(viewer, /showNextSlide/);
-    assert.match(viewer, /next-lyrics/);
+    assert.doesNotMatch(viewer, /id="logo"/);
+    assert.match(viewer, /nextSlideCount/);
+    assert.match(viewer, /upcomingSlides/);
+    assert.match(viewer, /Math\.pow\(0\.82, index\)/);
   });
 });
