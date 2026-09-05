@@ -5,9 +5,11 @@ services:
     plan: free
     region: singapore             # or your nearest region
     branch: main
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
+      - key: STAGE_CUE_CONTROL_TOKEN
+        sync: false

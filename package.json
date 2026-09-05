@@ -1,17 +1,20 @@
 {
-  "name": "videopsalm-test",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "stage-cue-render-server",
+  "version": "2.0.0",
+  "description": "Church-isolated Socket.IO presentation relay for Stage Cue",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20 <25"
+  },
   "dependencies": {
-    "cors": "^2.8.6",
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
   }

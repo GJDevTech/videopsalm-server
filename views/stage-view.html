@@ -1,81 +1,179 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<title>Stage View</title>
-<style>
-  body { background: black; color: white; font-family: sans-serif; }
-  #title { font-size: 36px; text-align: center; margin-bottom: 20px; }
-  #type { font-size: 32px; text-align: center; margin-bottom: 20px;}
-  #current { font-size: 56px; text-align: center; margin: 20px; color: rgb(255, 255, 0); font-weight: bold;}
-  #next { font-size: 32px; text-align: center; margin: 20px; color: gray; }
-  #next-2 { font-size: 24px; text-align: center; margin: 20px; color: gray; }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stage Cue</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+    }
+    body { display: grid; place-items: center; }
+    #stage {
+      position: relative;
+      width: min(100vw, 177.7778vh);
+      height: min(56.25vw, 100vh);
+      overflow: hidden;
+      background: #000;
+    }
+    #text-box {
+      position: absolute;
+      display: flex;
+      overflow: visible;
+    }
+    #lyrics {
+      white-space: pre;
+      line-height: 1.12;
+    }
+    #logo {
+      position: absolute;
+      display: none;
+      height: auto;
+      object-fit: contain;
+    }
+    #status {
+      position: fixed;
+      right: 12px;
+      top: 12px;
+      z-index: 10;
+      display: none;
+      max-width: min(420px, calc(100vw - 24px));
+      padding: 8px 10px;
+      border-radius: 6px;
+      color: #fff;
+      background: rgba(153, 27, 27, 0.92);
+      font: 14px/1.35 system-ui, sans-serif;
+    }
+  </style>
 </head>
 <body>
+  <main id="stage" aria-live="polite">
+    <div id="text-box"><div id="lyrics"></div></div>
+    <img id="logo" alt="Church logo">
+  </main>
+  <div id="status" role="status"></div>
 
-<div id="title"></div>
-<div id="type"></div>
-<div id="current"></div>
-<div id="next"></div>
-<div id="next-2"></div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-const socket = io();
-
-function removeChords(text) {
-    return text.replace(/\[[^\]]+\]/g, "");
-}
-
-function showTimer(timerValue) {
-    // Clear everything
-    document.getElementById("title").innerText = "";
-    document.getElementById("type").innerText = "";
-    document.getElementById("next").innerText = "";
-    document.getElementById("next-2").innerText = "";
-
-    const currentEl = document.getElementById("current");
-
-    currentEl.innerText = timerValue;
-    currentEl.style.color = "red";
-    currentEl.style.fontSize = "150px"; // big
-}
-
-function clearDisplay(){
-    document.getElementById("title").innerText = "";
-    document.getElementById("type").innerText = "";
-    document.getElementById("current").innerText = "";
-    document.getElementById("next").innerText = "";
-    document.getElementById("next-2").innerText = "";
-}
-
-socket.on("slide-update", (data) => {
-
-    if(data.Clear){
-        clearDisplay();
-        return;
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const churchPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
+    const pathMatch = location.pathname.match(/^\/stage-view\/([^/]+)\/?$/);
+    const params = new URLSearchParams(location.search);
+    let churchId = "";
+    try {
+      churchId = pathMatch ? decodeURIComponent(pathMatch[1]) : (params.get("churchId") || "");
+    } catch (_error) {
+      churchId = "";
     }
 
-    if (data.Timer){
-        showTimer(data.Timer);
-        return;
+    const stage = document.getElementById("stage");
+    const box = document.getElementById("text-box");
+    const lyrics = document.getElementById("lyrics");
+    const logo = document.getElementById("logo");
+    const status = document.getElementById("status");
+    let cue = null;
+
+    function value(settings, key, fallback) {
+      return settings[key] === undefined ? fallback : settings[key];
     }
 
-    const index = parseInt(data.CurrentItemIndex) - 1;
-    const current = data.SongVerses[index];
-    const next = data.SongVerses[index + 1];
-    const next2 = data.SongVerses[index + 2];
+    function showStatus(message) {
+      status.textContent = message;
+      status.style.display = message ? "block" : "none";
+    }
 
-    document.getElementById("current").style.color = "rgb(255, 255, 0)";
-    document.getElementById("current").style.fontSize = "56px";
+    function fitText(maxSize) {
+      let low = 1;
+      let high = Math.max(1, Math.round(maxSize));
+      let best = 1;
+      while (low <= high) {
+        const size = Math.floor((low + high) / 2);
+        lyrics.style.fontSize = `${size}px`;
+        if (lyrics.scrollWidth <= box.clientWidth && lyrics.scrollHeight <= box.clientHeight) {
+          best = size;
+          low = size + 1;
+        } else {
+          high = size - 1;
+        }
+      }
+      lyrics.style.fontSize = `${best}px`;
+    }
 
-    document.getElementById("title").innerText = data.Title;
-    document.getElementById("type").innerText = current ? current.Title : "";
-    document.getElementById("current").innerText = current ? removeChords(current.Lyrics) : "";
-    document.getElementById("next").innerText = next ? removeChords(next.Lyrics) : "";
-    document.getElementById("next-2").innerText = next2 ? removeChords(next2.Lyrics) : "";
-});
-</script>
+    function render() {
+      if (!cue) return;
+      const settings = cue.settings || {};
+      const blackout = cue.mode === "BLACKOUT";
+      const clear = cue.mode === "CLEAR" || cue.mode === "READY";
+      const scale = stage.clientWidth / 1920;
+      stage.style.background = blackout
+        ? "#000000"
+        : value(settings, "backgroundColor", "#000000");
+      box.style.left = `${value(settings, "textBoxX", 5)}%`;
+      box.style.top = `${value(settings, "textBoxY", 25)}%`;
+      box.style.width = `${value(settings, "textBoxWidth", 90)}%`;
+      box.style.height = `${value(settings, "textBoxHeight", 50)}%`;
 
+      const horizontal = value(settings, "textHorizontalAlign", "center");
+      const vertical = value(settings, "textVerticalAlign", "center");
+      box.style.justifyContent = {
+        left: "flex-start",
+        center: "center",
+        right: "flex-end",
+      }[horizontal] || "center";
+      box.style.alignItems = {
+        top: "flex-start",
+        center: "center",
+        bottom: "flex-end",
+      }[vertical] || "center";
+
+      lyrics.textContent = blackout || clear || cue.textHidden
+        ? ""
+        : String(cue.text || "");
+      lyrics.style.fontFamily = value(settings, "fontFamily", "Arial");
+      lyrics.style.fontWeight = value(settings, "bold", true) ? "700" : "400";
+      lyrics.style.fontStyle = value(settings, "italic", false) ? "italic" : "normal";
+      lyrics.style.color = value(settings, "textColor", "#FFFFFF");
+      lyrics.style.textAlign = horizontal;
+      const outline = value(settings, "outlineEnabled", false)
+        ? Math.max(0, Number(value(settings, "outlineWidth", 0))) * scale
+        : 0;
+      lyrics.style.webkitTextStroke = `${outline}px ${value(settings, "outlineColor", "#000000")}`;
+      lyrics.style.textShadow = value(settings, "shadowEnabled", true)
+        ? `${Number(value(settings, "shadowOffsetX", 3)) * scale}px ` +
+          `${Number(value(settings, "shadowOffsetY", 3)) * scale}px ` +
+          `${value(settings, "shadowColor", "#000000")}`
+        : "none";
+      fitText(Number(value(settings, "fontSize", 54)) * scale);
+
+      const logoData = String(value(settings, "logoData", ""));
+      const showLogo = !blackout && cue.logoVisible && logoData;
+      logo.style.display = showLogo ? "block" : "none";
+      if (showLogo) {
+        if (logo.src !== logoData) logo.src = logoData;
+        logo.style.left = `${value(settings, "logoX", 5)}%`;
+        logo.style.top = `${value(settings, "logoY", 5)}%`;
+        logo.style.width = `${value(settings, "logoWidth", 20)}%`;
+      }
+    }
+
+    if (!churchPattern.test(churchId)) {
+      showStatus("This stage-view URL does not contain a valid church ID.");
+    } else {
+      document.title = `Stage Cue · ${churchId}`;
+      const socket = io({ auth: { churchId } });
+      socket.on("connect", () => showStatus(""));
+      socket.on("disconnect", () => showStatus("Stage Cue is reconnecting…"));
+      socket.on("instance-error", data => showStatus(String(data?.error || "Invalid church presentation.")));
+      socket.on("cue-update", data => {
+        cue = data;
+        render();
+      });
+    }
+    addEventListener("resize", render);
+  </script>
 </body>
 </html>

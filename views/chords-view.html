@@ -1,91 +1,110 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<title>Chords View</title>
-<style>
-  body { background: black; color: white; font-family: monospace; }
-  #title { font-size: 36px; text-align: center; margin-bottom: 20px; }
-  #type { font-size: 32px; text-align: center; margin-bottom: 20px; }
-  #current { font-size: 48px; text-align: center; margin: 20px; color: rgb(255, 255, 0); }
-  #next { font-size: 32px; text-align: center; margin: 20px; color: rgb(173, 173, 173); }
-  #next-2 { font-size: 24px; text-align: center; margin: 20px; color: rgb(91, 91, 91); }
-
-  .chords-line {
-    color: rgba(255, 255, 0, 0.635);
-  }
-
-  pre { 
-    margin: 0;
-    white-space: pre;
-  } 
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stage Cue Chords</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; background: #000; color: #fff; }
+    body { overflow: auto; padding: 3vh 4vw; font-family: ui-monospace, monospace; }
+    #title { text-align: center; font: 700 clamp(24px, 3vw, 48px)/1.2 system-ui, sans-serif; }
+    #segment { margin: 1vh 0 2vh; text-align: center; color: #93c5fd; font-size: clamp(18px, 2vw, 34px); }
+    .block { margin: 2vh auto; max-width: 94vw; text-align: center; }
+    .block.current { color: #fff; font-size: clamp(24px, 3.5vw, 58px); }
+    .block.next { color: #a3a3a3; font-size: clamp(18px, 2.4vw, 38px); }
+    .block.next2 { color: #666; font-size: clamp(15px, 1.8vw, 28px); }
+    pre { margin: 0; white-space: pre; font: inherit; }
+    pre.chords { color: #facc15; }
+    #status { color: #fca5a5; text-align: center; font: 16px system-ui, sans-serif; }
+  </style>
 </head>
 <body>
+  <div id="status"></div>
+  <div id="title"></div>
+  <div id="segment"></div>
+  <div id="current" class="block current"></div>
+  <div id="next" class="block next"></div>
+  <div id="next2" class="block next2"></div>
 
-<div id="title"></div>
-<div id="type"></div>
-<div id="current"></div>
-<div id="next"></div>
-<div id="next-2"></div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const churchPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
+    const pathMatch = location.pathname.match(/^\/chords-view\/([^/]+)\/?$/);
+    const params = new URLSearchParams(location.search);
+    let churchId = "";
+    try {
+      churchId = pathMatch ? decodeURIComponent(pathMatch[1]) : (params.get("churchId") || "");
+    } catch (_error) {
+      churchId = "";
+    }
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-const socket = io();
+    const status = document.getElementById("status");
+    const title = document.getElementById("title");
+    const segment = document.getElementById("segment");
 
-socket.on("slide-update", (data) => {
-  console.log(data);
-    const index = parseInt(data.CurrentItemIndex) - 1;
-    const current = data.SongVerses[index];
-    const next = data.SongVerses[index + 1];
-    const next2 = data.SongVerses[index + 2];
+    function splitChordLine(line) {
+      let chords = "";
+      let lyrics = "";
+      let lastIndex = 0;
+      for (const match of line.matchAll(/\[([^\]]+)\]/g)) {
+        lyrics += line.slice(lastIndex, match.index);
+        lastIndex = match.index + match[0].length;
+        chords += " ".repeat(Math.max(0, lyrics.length - chords.length)) + match[1];
+      }
+      lyrics += line.slice(lastIndex);
+      return { chords, lyrics };
+    }
 
-    document.getElementById("title").innerText = data.Title;
-    document.getElementById("type").innerText = current ? current.Title : "";
-    document.getElementById("current").innerHTML = current ? renderChordsAbove(current.Lyrics) : "";
-    document.getElementById("next").innerHTML = next ? renderChordsAbove(next.Lyrics) : "";
-    document.getElementById("next-2").innerHTML = next2 ? renderChordsAbove(next2.Lyrics) : "";
-});
+    function renderBlock(element, text) {
+      element.replaceChildren();
+      for (const line of String(text || "").split("\n")) {
+        const parsed = splitChordLine(line);
+        const chordLine = document.createElement("pre");
+        chordLine.className = "chords";
+        chordLine.textContent = parsed.chords;
+        const lyricLine = document.createElement("pre");
+        lyricLine.textContent = parsed.lyrics;
+        element.append(chordLine, lyricLine);
+      }
+    }
 
-function renderChordsAbove(text) {
-    if (!text) return "";
+    function clearDisplay() {
+      title.textContent = "";
+      segment.textContent = "";
+      for (const id of ["current", "next", "next2"]) {
+        document.getElementById(id).replaceChildren();
+      }
+    }
 
-    const lines = text.split('\n');
-    let result = "";
+    function render(cue) {
+      const hidden = cue.mode === "BLACKOUT" || cue.mode === "CLEAR" || cue.textHidden;
+      document.body.style.background = cue.mode === "BLACKOUT"
+        ? "#000000"
+        : String(cue.settings?.backgroundColor || "#000000");
+      document.body.style.fontFamily = String(cue.settings?.fontFamily || "ui-monospace, monospace");
+      if (hidden) {
+        clearDisplay();
+        return;
+      }
+      title.textContent = String(cue.title || "");
+      segment.textContent = String(cue.segment || "");
+      renderBlock(document.getElementById("current"), cue.chordText || cue.text);
+      renderBlock(document.getElementById("next"), cue.nextChordText || cue.nextText);
+      renderBlock(document.getElementById("next2"), cue.next2ChordText || cue.next2Text);
+    }
 
-    lines.forEach(line => {
-        let chordLine = "";
-        let lyricLine = "";
-
-        let regex = /\[(.*?)\]/g;
-        let lastIndex = 0;
-
-        let matches = [...line.matchAll(regex)];
-
-        let lyricPointer = 0; // Tracks position in lyricLine
-
-        matches.forEach(match => {
-            let chord = match[1];
-            let start = match.index;
-
-            // Append lyrics before the chord
-            let segment = line.slice(lastIndex, start);
-            lyricLine += segment;
-            lastIndex = start + match[0].length;
-
-            // Build chord line: pad with spaces to reach the position in lyricLine
-            let pad = lyricLine.length - chordLine.length;
-            chordLine += " ".repeat(pad) + chord;
-        });
-
-        // Append remaining lyrics after last chord
-        lyricLine += line.slice(lastIndex);
-
-        result += `<pre class="chords-line">${chordLine}</pre>\n<pre>${lyricLine}</pre>\n`;
-    });
-
-    return result;
-}
-</script>
-
+    if (!churchPattern.test(churchId)) {
+      status.textContent = "This chords-view URL does not contain a valid church ID.";
+    } else {
+      const socket = io({ auth: { churchId } });
+      socket.on("connect", () => { status.textContent = ""; });
+      socket.on("disconnect", () => { status.textContent = "Stage Cue is reconnecting…"; });
+      socket.on("instance-error", data => {
+        status.textContent = String(data?.error || "Invalid church presentation.");
+      });
+      socket.on("cue-update", render);
+    }
+  </script>
 </body>
 </html>
