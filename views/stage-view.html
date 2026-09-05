@@ -33,9 +33,9 @@
     #upcoming {
       position: absolute;
       left: 5%;
-      bottom: 2%;
+      top: 72%;
       width: 90%;
-      height: 27%;
+      height: 26%;
       display: none;
       flex-direction: column;
       align-items: flex-end;
@@ -152,6 +152,11 @@
       lyrics.style.fontStyle = value(settings, "italic", false) ? "italic" : "normal";
       lyrics.style.color = value(settings, "textColor", "#FFFFFF");
       lyrics.style.textAlign = horizontal;
+      const textCase = String(value(settings, "textCase", "preserve")).toLowerCase();
+      const textTransform = textCase === "upper"
+        ? "uppercase"
+        : (textCase === "lower" ? "lowercase" : "none");
+      lyrics.style.textTransform = textTransform;
       const outline = value(settings, "outlineEnabled", false)
         ? Math.max(0, Number(value(settings, "outlineWidth", 0))) * scale
         : 0;
@@ -171,6 +176,10 @@
       const upcoming = supplied.slice(0, count);
       const showUpcoming = !blackout && !clear && !cue.textHidden && upcoming.length > 0;
       upcomingBox.replaceChildren();
+      upcomingBox.style.left = `${value(settings, "upcomingBoxX", 5)}%`;
+      upcomingBox.style.top = `${value(settings, "upcomingBoxY", 72)}%`;
+      upcomingBox.style.width = `${value(settings, "upcomingBoxWidth", 90)}%`;
+      upcomingBox.style.height = `${value(settings, "upcomingBoxHeight", 26)}%`;
       upcomingBox.style.display = showUpcoming ? "flex" : "none";
       if (showUpcoming) {
         upcoming.forEach((slide, index) => {
@@ -180,6 +189,8 @@
           element.style.fontFamily = value(settings, "fontFamily", "Arial");
           element.style.fontWeight = value(settings, "bold", true) ? "700" : "400";
           element.style.fontStyle = value(settings, "italic", false) ? "italic" : "normal";
+          element.style.color = value(settings, "upcomingTextColor", "#A7B0BC");
+          element.style.textTransform = textTransform;
           element.style.opacity = String(Math.max(0.38, 0.86 - index * 0.12));
           upcomingBox.appendChild(element);
           const relativeSize = 0.50 * Math.pow(0.82, index);

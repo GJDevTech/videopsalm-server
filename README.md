@@ -43,8 +43,15 @@ Content-Type: application/json
 The desktop sends each church's dedicated Stage View style in `settings`.
 `settings.nextSlideCount` selects zero to five entries from
 `cue.upcomingSlides`; later entries are displayed progressively smaller and
-fainter. Stage View never displays the Live View church logo. Live View styling
-and the in-app Preview remain local to the desktop.
+fainter. `settings.upcomingTextColor` and the `upcomingBoxX/Y/Width/Height`
+fields control the upcoming-slide area. `settings.textCase` can preserve,
+uppercase, or lowercase displayed lyrics. Stage View never displays the Live
+View church logo. Live View styling and the in-app Preview remain local to the
+desktop.
+
+Stage Cue can also send a Stage-only clear cue or a custom operator message.
+Those cues use the same protected church route and never alter the desktop Live
+View or Preview. Presenting the next lyric replaces the clear/message cue.
 
 The previous `/api/cue` and VideoPsalm `/update-slide` endpoints remain for
 compatibility, but both now require a valid `churchId` and the configured token.
